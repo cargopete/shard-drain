@@ -130,7 +130,9 @@ Then every deployment was moved from the data shard into the new primary and
 back again on the final build: 140 of 140 values identical after each leg.
 `drain` adopted a hand-made copy with one tampered row and refused to switch,
 leaving queries on the source. The stuck start above was reproduced on
-purpose.
+purpose, both ways: a copy already stuck was paused for the cache window,
+resumed, and completed; and a hash sent straight back to the shard it had
+just left waited out the window, then started first time.
 
 Not tested: deployments larger than about 40 MiB, so nothing about copy time
 or disk at scale; more than one index node; chain reorgs (the chain was

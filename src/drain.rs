@@ -386,10 +386,13 @@ async fn advance(
             if let Some(left) =
                 catalog::removal_wait(&ctx.primary, &m.hash, ctx.to_shard(), window).await?
             {
+                // absolute time, so the line prints once rather than every poll
+                let at = chrono::Utc::now() + chrono::Duration::seconds(left);
                 return Ok(Step::Waiting(format!(
-                    "a copy of this hash left {} recently; waiting {left}s for graph-node's \
-                     layout cache to forget it",
-                    ctx.to_shard()
+                    "a copy of this hash left {} recently; waiting until {} UTC for \
+                     graph-node's layout cache to forget it",
+                    ctx.to_shard(),
+                    at.format("%H:%M:%S")
                 )));
             }
             println!(
@@ -435,10 +438,12 @@ async fn advance(
                 if let Some(at) = m.cache_pause_at {
                     let paused = (now - at).to_std().unwrap_or_default();
                     if paused < cache_window(opts) {
+                        let resume =
+                            at + chrono::Duration::from_std(cache_window(opts)).unwrap_or_default();
                         return Ok(Step::Waiting(format!(
                             "copy {dst_ns} paused so graph-node's layout cache can forget it, \
-                             resuming in {}s",
-                            (cache_window(opts) - paused).as_secs()
+                             resuming at {} UTC",
+                            resume.format("%H:%M:%S")
                         )));
                     }
                     println!("{} {}: resuming the copy {dst_ns}", m.src_ns, m.hash);
