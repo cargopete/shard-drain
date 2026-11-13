@@ -1,0 +1,42 @@
+# yatr - https://github.com/cargopete/yatr
+#
+# The aggregate is `ci`, not `check`: `yatr check` is a builtin and shadows a
+# task of that name.
+
+[env]
+CARGO_TERM_COLOR = "always"
+
+[settings]
+cache = true
+
+[tasks.fmt]
+desc = "Format the tree"
+run = ["cargo fmt"]
+no_cache = true
+
+[tasks.fmt-check]
+desc = "Fail if the tree is unformatted"
+run = ["cargo fmt --check"]
+sources = ["src/**/*.rs"]
+
+[tasks.lint]
+desc = "Clippy with warnings denied"
+run = ["cargo clippy --all-targets --locked -- -D warnings"]
+sources = ["src/**/*.rs", "Cargo.toml", "Cargo.lock"]
+
+[tasks.test]
+desc = "Unit tests (no Postgres or graph-node needed)"
+run = ["cargo test --locked"]
+sources = ["src/**/*.rs", "Cargo.toml", "Cargo.lock"]
+# watch globs are matched against absolute paths, so a bare src/** never fires.
+watch = ["**/src/**/*.rs"]
+
+[tasks.build]
+desc = "Release binary"
+run = ["cargo build --release --locked"]
+sources = ["src/**/*.rs", "Cargo.toml", "Cargo.lock"]
+outputs = ["target/release/shard-drain"]
+
+[tasks.ci]
+desc = "fmt-check, lint, test"
+depends = ["fmt-check", "lint", "test"]
